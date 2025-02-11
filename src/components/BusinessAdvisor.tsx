@@ -427,9 +427,11 @@ export default function BusinessAdvisor() {
     <div className="container mx-auto max-w-4xl p-4 bg-gradient-to-b from-white to-purple-50">
       <div className="mb-8 relative">
         {/* Main Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-4">
           <div>
-            <h1 className="text-3xl font-light text-foreground bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">Soul-Guided Business Journey</h1>
+            <h1 className="text-3xl font-light text-foreground bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+              Soul-Guided Business Journey
+            </h1>
             <p className="text-sm text-muted-foreground mt-2 italic">
               Aligning your business with universal wisdom
             </p>
@@ -437,18 +439,22 @@ export default function BusinessAdvisor() {
           <Button
             onClick={() => setIsPanelOpen(!isPanelOpen)}
             variant="ghost"
-            size="icon"
-            className="z-20 hover:bg-purple-100"
+            className="fixed right-4 top-4 z-50 rounded-full w-10 h-10 bg-white/80 backdrop-blur-sm hover:bg-purple-100 border border-purple-100 shadow-sm transition-all duration-300"
           >
-            {isPanelOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {isPanelOpen ? 
+              <ChevronRight className="h-4 w-4 text-purple-600" /> : 
+              <ChevronLeft className="h-4 w-4 text-purple-600" />
+            }
           </Button>
         </div>
 
         {/* Slide-away Action Panel */}
-        <div className={`absolute right-0 top-0 transition-transform duration-500 ease-in-out transform bg-white/90 backdrop-blur-lg border-l border-purple-100 rounded-lg shadow-lg p-4 ${
-          isPanelOpen ? 'translate-x-0' : 'translate-x-[calc(100%+1rem)]'
-        }`}>
-          <div className="flex flex-col gap-3">
+        <div 
+          className={`fixed right-0 top-0 h-full w-64 transition-transform duration-500 ease-in-out transform 
+            ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'} 
+            bg-white/95 backdrop-blur-md border-l border-purple-100 shadow-lg z-40 p-6`}
+        >
+          <div className="flex flex-col gap-4 mt-16">
             <Button 
               onClick={resetAll}
               variant="soft"
@@ -493,6 +499,14 @@ export default function BusinessAdvisor() {
             </label>
           </div>
         </div>
+
+        {/* Add overlay when panel is open */}
+        {isPanelOpen && (
+          <div 
+            className="fixed inset-0 bg-black/5 backdrop-blur-sm z-30"
+            onClick={() => setIsPanelOpen(false)}
+          />
+        )}
 
         {/* Journey Indicators */}
         <div className="flex justify-between items-center mt-6 bg-white/60 p-3 rounded-lg backdrop-blur-sm">
