@@ -24,11 +24,9 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import TypewriterComponent from 'typewriter-effect'
-
-interface Message {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+import { Message } from '../types'
+import { useConversations } from '../hooks/useConversations'
+import { AnimatedMessage } from './AnimatedMessage'
 
 interface BusinessMetrics {
   estimatedRoi?: string;
@@ -116,16 +114,21 @@ const AnimatedMessage = ({ message, role }: { message: Message; role: string }) 
 export default function BusinessAdvisor() {
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [conversations, setConversations] = useState<BusinessPrompt[]>([])
-  const [activeConversation, setActiveConversation] = useState<string | null>(null)
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Add ref for scroll area
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  
+
+  const {
+    conversations,
+    setConversations,
+    activeConversation,
+    setActiveConversation,
+    lastSaved,
+    error,
+    setError,
+    clearStoredData
+  } = useConversations();
+
   // Add scroll to bottom effect
   const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
@@ -321,6 +324,7 @@ export default function BusinessAdvisor() {
       }
 
       setInput('')
+      scrollToBottom();
     } catch (error: any) {
       console.error('Error processing request:', error)
       setError(error.message || 'Failed to process your request. Please try again.')
@@ -338,11 +342,11 @@ export default function BusinessAdvisor() {
     switch (category.toLowerCase()) {
       case 'purpose': return <Heart className="h-4 w-4 text-purple-500" />
       case 'alignment': return <Target className="h-4 w-4 text-indigo-500" />
-      case 'service': return <Users className="h-4 w-4 text-blue-500" />
+      case 'service': return <MessageSquare className="h-4 w-4 text-blue-500" />
       case 'abundance': return <DollarSign className="h-4 w-4 text-green-500" />
       case 'wisdom': return <Lightbulb className="h-4 w-4 text-amber-500" />
-      case 'community': return <Users className="h-4 w-4 text-pink-500" />
-      case 'innovation': return <Laptop className="h-4 w-4 text-cyan-500" />
+      case 'community': return <MessageSquare className="h-4 w-4 text-pink-500" />
+      case 'innovation': return <Target className="h-4 w-4 text-cyan-500" />
       case 'mastery': return <CheckCircle2 className="h-4 w-4 text-violet-500" />
       default: return <MessageSquare className="h-4 w-4 text-purple-500" />
     }
@@ -569,12 +573,6 @@ export default function BusinessAdvisor() {
                   <div className="flex items-center space-x-2">
                     {getCategoryIcon(conv.category)}
                     <span className="text-sm font-light text-purple-800">{getCategoryLabel(conv.category)}</span>
-                    {conv.metrics?.estimatedRoi && (
-                      <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full flex items-center gap-1">
-                        <DollarSign className="h-3 w-3" />
-                        Divine Abundance: {conv.metrics.estimatedRoi}
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${getSentimentColor(conv.sentiment)}`}>
@@ -595,27 +593,6 @@ export default function BusinessAdvisor() {
                     <AnimatedMessage key={idx} message={msg} role={msg.role} />
                   ))}
                 </div>
-
-                {conv.metrics?.implementationTime && (
-                  <div className="mt-4 flex items-center gap-4 text-xs text-indigo-600">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Sacred Timeline: {conv.metrics.implementationTime}
-                    </span>
-                    {conv.metrics.difficulty && (
-                      <span className="flex items-center gap-1">
-                        <Target className="h-3 w-3" />
-                        Energy Required: {conv.metrics.difficulty}
-                      </span>
-                    )}
-                    {conv.metrics.priority && (
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Divine Timing: {conv.metrics.priority}
-                      </span>
-                    )}
-                  </div>
-                )}
 
                 <div className="mt-4 text-xs text-purple-600 italic">
                   Journey began: {new Date(conv.createdAt).toLocaleString()}
