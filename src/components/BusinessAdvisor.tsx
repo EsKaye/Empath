@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button, TextField, ScrollArea } from '@radix-ui/themes'
 import { analyzeSentimentAndRespond } from '../lib/mistral'
 import { 
@@ -54,7 +54,7 @@ const ACTIVE_CONVERSATION_KEY = 'activeConversation'
 const AUTO_SAVE_INTERVAL = 30000 // 30 seconds
 
 // Add new component for animated message
-const AnimatedMessage = ({ message, role }: { message: Message; role: string }) => {
+const AnimatedMessage = ({ message, role, isNewMessage }: { message: Message; role: string; isNewMessage: boolean }) => {
   const [isTyping, setIsTyping] = useState(true);
   const [displayContent, setDisplayContent] = useState('');
   
@@ -67,7 +67,7 @@ const AnimatedMessage = ({ message, role }: { message: Message; role: string }) 
         role === 'user' 
           ? 'bg-purple-50 ml-auto max-w-[80%] border border-purple-100' 
           : 'bg-indigo-50 mr-auto max-w-[80%] border border-indigo-100'
-      }`}
+      } ${isNewMessage ? 'animate-pulse' : ''}`}
     >
       {role === 'assistant' ? (
         <div className="text-sm whitespace-pre-wrap leading-relaxed">
@@ -117,6 +117,7 @@ export default function BusinessAdvisor() {
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [newMessageId, setNewMessageId] = useState<string | null>(null);
 
   const {
     conversations,
@@ -269,28 +270,84 @@ export default function BusinessAdvisor() {
     reader.readAsText(file)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || isProcessing) return
+  // Optimize conversation rendering with useMemo
+  const renderedConversations = useMemo(() => 
+    conversations.map((conv) => (
+      <motion.div
+        key={conv.id}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className={`rounded-lg border border-purple-100 bg-white/90 p-6 shadow-sm transition-all hover:shadow-md ${
+          activeConversation === conv.id ? 'ring-2 ring-purple-400' : ''
+        }`}
+        onClick={() => setActiveConversation(conv.id)}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            {getCategoryIcon(conv.category)}
+            <span className="text-sm font-light text-purple-800">{getCategoryLabel(conv.category)}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${getSentimentColor(conv.sentiment)}`}>
+              {getSentimentIcon(conv.sentiment)}
+              <span>{getSentimentLabel(conv.sentiment)}</span>
+            </span>
+            {conv.messages.length > 2 && (
+              <div className="flex items-center text-xs text-indigo-600">
+                <MessageSquare className="h-3 w-3 mr-1" />
+                {Math.floor(conv.messages.length / 2)} revelations
+              </div>
+            )}
+          </div>
+        </div>
 
-    setIsProcessing(true)
-    setError(null)
+        <div className="space-y-4">
+          {conv.messages.map((msg, idx) => {
+            const messageId = `${conv.id}-${idx}`;
+            return (
+              <AnimatedMessage 
+                key={messageId} 
+                message={msg} 
+                role={msg.role}
+                isNewMessage={messageId === newMessageId}
+              />
+            );
+          })}
+        </div>
+
+        <div className="mt-4 text-xs text-purple-600 italic">
+          Journey began: {new Date(conv.createdAt).toLocaleString()}
+        </div>
+      </motion.div>
+    )), [conversations, activeConversation, newMessageId]);
+
+  // Update handleSubmit to track new messages
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isProcessing) return;
+
+    setIsProcessing(true);
+    setError(null);
 
     try {
       const currentConversation = activeConversation 
         ? conversations.find(c => c.id === activeConversation)
-        : null
+        : null;
 
-      const conversationHistory = currentConversation?.messages || []
-      const newUserMessage: Message = { role: 'user', content: input }
+      const conversationHistory = currentConversation?.messages || [];
+      const newUserMessage: Message = { role: 'user', content: input };
       
       const { sentiment, response, category, isQuestion } = await analyzeSentimentAndRespond(
         input,
         [...conversationHistory, newUserMessage]
-      )
+      );
       
-      const newAssistantMessage: Message = { role: 'assistant', content: response }
-      const newMessages = [...conversationHistory, newUserMessage, newAssistantMessage]
+      const newAssistantMessage: Message = { role: 'assistant', content: response };
+      const newMessages = [...conversationHistory, newUserMessage, newAssistantMessage];
+      const newId = Date.now().toString();
 
       if (currentConversation) {
         // Update existing conversation
@@ -306,11 +363,12 @@ export default function BusinessAdvisor() {
                 messages: newMessages
               }
             : conv
-        ))
+        ));
+        setNewMessageId(`${currentConversation.id}-${newMessages.length - 1}`);
       } else {
         // Create new conversation
         const newPrompt: BusinessPrompt = {
-          id: Date.now().toString(),
+          id: newId,
           text: input,
           sentiment,
           response,
@@ -318,20 +376,21 @@ export default function BusinessAdvisor() {
           isQuestion,
           messages: newMessages,
           createdAt: new Date()
-        }
-        setConversations(prev => [newPrompt, ...prev])
-        setActiveConversation(newPrompt.id)
+        };
+        setConversations(prev => [newPrompt, ...prev]);
+        setActiveConversation(newId);
+        setNewMessageId(`${newId}-1`);
       }
 
-      setInput('')
+      setInput('');
       scrollToBottom();
     } catch (error: any) {
-      console.error('Error processing request:', error)
-      setError(error.message || 'Failed to process your request. Please try again.')
+      console.error('Error processing request:', error);
+      setError(error.message || 'Failed to process your request. Please try again.');
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const startNewConversation = () => {
     setActiveConversation(null)
@@ -533,56 +592,14 @@ export default function BusinessAdvisor() {
         className="h-[calc(100vh-400px)] rounded-lg border border-purple-100 bg-white/80 backdrop-blur-sm p-4 mb-6"
         ref={scrollAreaRef}
       >
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           <div className="space-y-6">
-            {conversations.map((conv) => (
-              <motion.div
-                key={conv.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-                className={`rounded-lg border border-purple-100 bg-white/90 p-6 shadow-sm transition-all hover:shadow-md ${
-                  activeConversation === conv.id ? 'ring-2 ring-purple-400' : ''
-                }`}
-                onClick={() => setActiveConversation(conv.id)}
-                role="button"
-                tabIndex={0}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    {getCategoryIcon(conv.category)}
-                    <span className="text-sm font-light text-purple-800">{getCategoryLabel(conv.category)}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${getSentimentColor(conv.sentiment)}`}>
-                      {getSentimentIcon(conv.sentiment)}
-                      <span>{getSentimentLabel(conv.sentiment)}</span>
-                    </span>
-                    {conv.messages.length > 2 && (
-                      <div className="flex items-center text-xs text-indigo-600">
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                        {Math.floor(conv.messages.length / 2)} revelations
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {conv.messages.map((msg, idx) => (
-                    <AnimatedMessage key={idx} message={msg} role={msg.role} />
-                  ))}
-                </div>
-
-                <div className="mt-4 text-xs text-purple-600 italic">
-                  Journey began: {new Date(conv.createdAt).toLocaleString()}
-                </div>
-              </motion.div>
-            ))}
+            {renderedConversations}
             {conversations.length === 0 && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.3 }}
                 className="text-center py-12"
               >
                 <p className="text-lg text-purple-800 font-light">
