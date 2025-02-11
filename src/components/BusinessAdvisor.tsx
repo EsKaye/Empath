@@ -399,27 +399,6 @@ export default function BusinessAdvisor() {
     }
   }
 
-  // Clear all stored data
-  const clearStoredData = useCallback(() => {
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-      localStorage.removeItem(BACKUP_KEY)
-      localStorage.removeItem(ACTIVE_CONVERSATION_KEY)
-      setConversations([])
-      setActiveConversation(null)
-      setLastSaved(null)
-      setError(null)
-      console.log('All stored data cleared successfully')
-    } catch (error) {
-      console.error('Error clearing stored data:', error)
-    }
-  }, [])
-
-  // Clear data on initial mount
-  useEffect(() => {
-    clearStoredData()
-  }, [clearStoredData])
-
   const resetAll = () => {
     clearStoredData()
     setInput('')
