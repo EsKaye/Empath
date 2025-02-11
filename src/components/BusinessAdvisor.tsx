@@ -121,6 +121,7 @@ export default function BusinessAdvisor() {
   const [activeConversation, setActiveConversation] = useState<string | null>(null)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Add ref for scroll area
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -423,6 +424,13 @@ export default function BusinessAdvisor() {
     window.location.reload() // Force a complete refresh
   }
 
+  // Add useEffect to focus input after processing
+  useEffect(() => {
+    if (!isProcessing && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [isProcessing])
+
   return (
     <div className="container mx-auto max-w-4xl p-4 bg-gradient-to-b from-white to-purple-50">
       <div className="mb-8 relative">
@@ -641,6 +649,7 @@ export default function BusinessAdvisor() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <TextField.Root>
             <TextField.Input
+              ref={inputRef}
               placeholder={activeConversation 
                 ? "Continue sharing your journey..." 
                 : "Share what's in your heart about your business..."
