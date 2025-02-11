@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { BusinessPrompt } from '../types';
 import {
   STORAGE_KEY,
@@ -12,10 +12,15 @@ export function useConversations() {
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isInitialized = useRef(false);
 
   // Save handler with error handling and backup
   const saveConversations = useCallback((convs: BusinessPrompt[]) => {
     try {
+      if (!Array.isArray(convs)) {
+        throw new Error('Invalid conversations data');
+      }
+
       // Create backup of previous state
       const currentData = localStorage.getItem(STORAGE_KEY);
       if (currentData) {
@@ -23,7 +28,8 @@ export function useConversations() {
       }
 
       // Save new state
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
+      const dataToSave = JSON.stringify(convs);
+      localStorage.setItem(STORAGE_KEY, dataToSave);
       setLastSaved(new Date());
       console.log('Conversations saved successfully');
     } catch (error) {
@@ -34,20 +40,31 @@ export function useConversations() {
 
   // Load conversations with error recovery
   const loadConversations = useCallback(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
     try {
       // Try to load main storage
       const savedConversations = localStorage.getItem(STORAGE_KEY);
       const savedActive = localStorage.getItem(ACTIVE_CONVERSATION_KEY);
       
       if (savedConversations) {
-        const parsed = JSON.parse(savedConversations).map((conv: any) => ({
+        const parsed = JSON.parse(savedConversations);
+        if (!Array.isArray(parsed)) {
+          throw new Error('Invalid stored data format');
+        }
+
+        const validatedConversations = parsed.map((conv: any) => ({
           ...conv,
-          createdAt: new Date(conv.createdAt)
+          createdAt: new Date(conv.createdAt),
+          id: conv.id || Date.now().toString(),
+          messages: Array.isArray(conv.messages) ? conv.messages : []
         }));
-        setConversations(parsed);
+
+        setConversations(validatedConversations);
         
         // Restore active conversation if it exists
-        if (savedActive && parsed.some((conv: BusinessPrompt) => conv.id === savedActive)) {
+        if (savedActive && validatedConversations.some((conv: BusinessPrompt) => conv.id === savedActive)) {
           setActiveConversation(savedActive);
         }
       }
@@ -57,16 +74,25 @@ export function useConversations() {
         // Try to recover from backup
         const backup = localStorage.getItem(BACKUP_KEY);
         if (backup) {
-          const parsed = JSON.parse(backup).map((conv: any) => ({
+          const parsed = JSON.parse(backup);
+          if (!Array.isArray(parsed)) {
+            throw new Error('Invalid backup data format');
+          }
+
+          const validatedBackup = parsed.map((conv: any) => ({
             ...conv,
-            createdAt: new Date(conv.createdAt)
+            createdAt: new Date(conv.createdAt),
+            id: conv.id || Date.now().toString(),
+            messages: Array.isArray(conv.messages) ? conv.messages : []
           }));
-          setConversations(parsed);
+
+          setConversations(validatedBackup);
           setError('Recovered from backup. Some recent changes might be missing.');
         }
       } catch (backupError) {
         console.error('Error loading backup:', backupError);
         setError('Could not load your conversation history. Starting fresh.');
+        setConversations([]);
       }
     }
   }, []);
@@ -81,18 +107,20 @@ export function useConversations() {
       setActiveConversation(null);
       setLastSaved(null);
       setError(null);
+      isInitialized.current = false;
       console.log('All stored data cleared successfully');
     } catch (error) {
       console.error('Error clearing stored data:', error);
+      setError('Failed to clear data. Please try again.');
     }
   }, []);
 
   // Auto-save effect
   useEffect(() => {
+    if (!conversations.length) return;
+
     const intervalId = setInterval(() => {
-      if (conversations.length > 0) {
-        saveConversations(conversations);
-      }
+      saveConversations(conversations);
     }, AUTO_SAVE_INTERVAL);
 
     return () => clearInterval(intervalId);
@@ -100,10 +128,14 @@ export function useConversations() {
 
   // Persist active conversation
   useEffect(() => {
-    if (activeConversation) {
-      localStorage.setItem(ACTIVE_CONVERSATION_KEY, activeConversation);
-    } else {
-      localStorage.removeItem(ACTIVE_CONVERSATION_KEY);
+    try {
+      if (activeConversation) {
+        localStorage.setItem(ACTIVE_CONVERSATION_KEY, activeConversation);
+      } else {
+        localStorage.removeItem(ACTIVE_CONVERSATION_KEY);
+      }
+    } catch (error) {
+      console.error('Error persisting active conversation:', error);
     }
   }, [activeConversation]);
 

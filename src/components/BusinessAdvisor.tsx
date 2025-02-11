@@ -24,27 +24,17 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import TypewriterComponent from 'typewriter-effect'
-import { Message } from '../types'
+import { Message, BusinessPrompt } from '../types'
 import { useConversations } from '../hooks/useConversations'
 import { AnimatedMessage } from './AnimatedMessage'
+import { useScrollToBottom } from '../hooks/useScrollToBottom'
+import { useInputFocus } from '../hooks/useInputFocus'
 
 interface BusinessMetrics {
   estimatedRoi?: string;
   implementationTime?: string;
   difficulty?: 'Low' | 'Medium' | 'High';
   priority?: 'Low' | 'Medium' | 'High';
-}
-
-interface BusinessPrompt {
-  id: string
-  text: string
-  sentiment: string
-  response: string
-  category: string
-  createdAt: Date
-  isQuestion: boolean
-  messages: Message[]
-  metrics?: BusinessMetrics
 }
 
 // Constants for storage

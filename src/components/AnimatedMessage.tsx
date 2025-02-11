@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import TypewriterComponent from 'typewriter-effect';
 import { Message } from '../types';
@@ -13,13 +13,30 @@ interface AnimatedMessageProps {
 export function AnimatedMessage({ message, role, isNewMessage = false }: AnimatedMessageProps) {
   const [isTyping, setIsTyping] = useState(isNewMessage);
   const [displayContent, setDisplayContent] = useState(isNewMessage ? '' : message.content);
-  
+  const [error, setError] = useState<string | null>(null);
+
+  // Reset state when message changes
   useEffect(() => {
     setIsTyping(isNewMessage);
     setDisplayContent(isNewMessage ? '' : message.content);
+    setError(null);
   }, [message.content, isNewMessage]);
 
-  const renderContent = () => {
+  const handleTypingComplete = useCallback(() => {
+    try {
+      setIsTyping(false);
+      setDisplayContent(message.content);
+    } catch (err) {
+      console.error('Error in typing completion:', err);
+      setError('Failed to display message');
+    }
+  }, [message.content]);
+
+  const renderContent = useCallback(() => {
+    if (error) {
+      return <p className="text-red-600 text-sm">{error}</p>;
+    }
+
     return displayContent.split('\n\n').map((paragraph, i) => (
       <span key={i} className="block mb-4 last:mb-0">
         {paragraph.startsWith('•') ? (
@@ -29,8 +46,8 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
         )}
       </span>
     ));
-  };
-  
+  }, [displayContent, error]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -47,14 +64,18 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
           {isTyping ? (
             <TypewriterComponent
               onInit={(typewriter) => {
-                typewriter
-                  .changeDelay(TYPING_SPEED * 0.4)
-                  .typeString(message.content)
-                  .callFunction(() => {
-                    setIsTyping(false);
-                    setDisplayContent(message.content);
-                  })
-                  .start();
+                try {
+                  typewriter
+                    .changeDelay(TYPING_SPEED * 0.4)
+                    .typeString(message.content)
+                    .callFunction(handleTypingComplete)
+                    .start();
+                } catch (err) {
+                  console.error('Error initializing typewriter:', err);
+                  setError('Failed to initialize typing animation');
+                  setIsTyping(false);
+                  setDisplayContent(message.content);
+                }
               }}
               options={{
                 cursor: '|',
