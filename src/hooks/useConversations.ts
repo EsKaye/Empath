@@ -10,7 +10,6 @@ import {
 export function useConversations() {
   const [conversations, setConversations] = useState<BusinessPrompt[]>([]);
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const isInitialized = useRef(false);
 
@@ -30,7 +29,6 @@ export function useConversations() {
       // Save new state
       const dataToSave = JSON.stringify(convs);
       localStorage.setItem(STORAGE_KEY, dataToSave);
-      setLastSaved(new Date());
       console.log('Conversations saved successfully');
     } catch (error) {
       console.error('Error saving conversations:', error);
@@ -105,7 +103,6 @@ export function useConversations() {
       localStorage.removeItem(ACTIVE_CONVERSATION_KEY);
       setConversations([]);
       setActiveConversation(null);
-      setLastSaved(null);
       setError(null);
       isInitialized.current = false;
       console.log('All stored data cleared successfully');
@@ -149,7 +146,6 @@ export function useConversations() {
     setConversations,
     activeConversation,
     setActiveConversation,
-    lastSaved,
     error,
     setError,
     saveConversations,

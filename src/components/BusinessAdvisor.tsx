@@ -45,8 +45,8 @@ const AUTO_SAVE_INTERVAL = 30000 // 30 seconds
 
 // Add new component for animated message
 const AnimatedMessage = ({ message, role, isNewMessage }: { message: Message; role: string; isNewMessage: boolean }) => {
-  const [isTyping, setIsTyping] = useState(true);
-  const [displayContent, setDisplayContent] = useState('');
+  const [isTyping, setIsTyping] = useState(isNewMessage);
+  const [displayContent, setDisplayContent] = useState(message.content);
   
   return (
     <motion.div
@@ -59,43 +59,37 @@ const AnimatedMessage = ({ message, role, isNewMessage }: { message: Message; ro
           : 'bg-indigo-50 mr-auto max-w-[80%] border border-indigo-100'
       } ${isNewMessage ? 'animate-pulse' : ''}`}
     >
-      {role === 'assistant' ? (
+      {role === 'assistant' && isNewMessage ? (
         <div className="text-sm whitespace-pre-wrap leading-relaxed">
-          {isTyping ? (
-            <TypewriterComponent
-              onInit={(typewriter) => {
-                typewriter
-                  .typeString(message.content)
-                  .callFunction(() => {
-                    setIsTyping(false);
-                    setDisplayContent(message.content);
-                  })
-                  .start();
-              }}
-              options={{
-                delay: 30,
-                cursor: '|',
-                wrapperClassName: "text-sm whitespace-pre-wrap leading-relaxed"
-              }}
-            />
-          ) : (
-            <div>
-              {displayContent.split('\n\n').map((paragraph, i) => (
-                <span key={i} className="block mb-4 last:mb-0">
-                  {paragraph.startsWith('•') ? (
-                    <span className="block pl-4 -indent-4 text-indigo-700">{paragraph}</span>
-                  ) : (
-                    paragraph
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
+          <TypewriterComponent
+            onInit={(typewriter) => {
+              typewriter
+                .typeString(message.content)
+                .callFunction(() => {
+                  setIsTyping(false);
+                  setDisplayContent(message.content);
+                })
+                .start();
+            }}
+            options={{
+              delay: 30,
+              cursor: '|',
+              wrapperClassName: "text-sm whitespace-pre-wrap leading-relaxed"
+            }}
+          />
         </div>
       ) : (
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-          {message.content}
-        </p>
+        <div className="text-sm whitespace-pre-wrap leading-relaxed">
+          {displayContent.split('\n\n').map((paragraph, i) => (
+            <span key={i} className="block mb-4 last:mb-0">
+              {paragraph.startsWith('•') ? (
+                <span className="block pl-4 -indent-4 text-indigo-700">{paragraph}</span>
+              ) : (
+                paragraph
+              )}
+            </span>
+          ))}
+        </div>
       )}
     </motion.div>
   );
@@ -167,6 +161,7 @@ export default function BusinessAdvisor() {
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [newMessageId, setNewMessageId] = useState<string | null>(null);
@@ -176,7 +171,6 @@ export default function BusinessAdvisor() {
     setConversations,
     activeConversation,
     setActiveConversation,
-    lastSaved,
     error,
     setError,
     clearStoredData
@@ -221,7 +215,7 @@ export default function BusinessAdvisor() {
       console.error('Error saving conversations:', error)
       setError('Failed to save your conversation. Please copy any important information.')
     }
-  }, [])
+  }, [setError, setLastSaved]);
 
   // Auto-save effect
   useEffect(() => {
