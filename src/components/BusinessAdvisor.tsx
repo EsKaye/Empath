@@ -321,8 +321,8 @@ export default function BusinessAdvisor() {
     conversations.map((conv) => (
       <motion.div
         key={conv.id}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={`rounded-lg border border-purple-100 bg-white/90 p-6 shadow-sm transition-all hover:shadow-md ${
           activeConversation === conv.id ? 'ring-2 ring-purple-400' : ''
@@ -370,7 +370,7 @@ export default function BusinessAdvisor() {
       </motion.div>
     )), [conversations, activeConversation, newMessageId]);
 
-  // Update handleSubmit to track new messages
+  // Update handleSubmit to append new conversations at the end
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isProcessing) return;
@@ -412,7 +412,7 @@ export default function BusinessAdvisor() {
         ));
         setNewMessageId(`${currentConversation.id}-${newMessages.length - 1}`);
       } else {
-        // Create new conversation
+        // Create new conversation and append it to the end
         const newPrompt: BusinessPrompt = {
           id: newId,
           text: input,
@@ -423,13 +423,14 @@ export default function BusinessAdvisor() {
           messages: newMessages,
           createdAt: new Date()
         };
-        setConversations(prev => [newPrompt, ...prev]);
+        setConversations(prev => [...prev, newPrompt]);
         setActiveConversation(newId);
         setNewMessageId(`${newId}-1`);
       }
 
       setInput('');
-      scrollToBottom();
+      // Delay scroll to ensure new content is rendered
+      setTimeout(scrollToBottom, 100);
     } catch (error: any) {
       console.error('Error processing request:', error);
       setError(error.message || 'Failed to process your request. Please try again.');

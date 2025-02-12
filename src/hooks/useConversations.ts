@@ -52,12 +52,14 @@ export function useConversations() {
           throw new Error('Invalid stored data format');
         }
 
-        const validatedConversations = parsed.map((conv: any) => ({
-          ...conv,
-          createdAt: new Date(conv.createdAt),
-          id: conv.id || Date.now().toString(),
-          messages: Array.isArray(conv.messages) ? conv.messages : []
-        }));
+        const validatedConversations = parsed
+          .map((conv: any) => ({
+            ...conv,
+            createdAt: new Date(conv.createdAt),
+            id: conv.id || Date.now().toString(),
+            messages: Array.isArray(conv.messages) ? conv.messages : []
+          }))
+          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); // Sort by creation time
 
         setConversations(validatedConversations);
         
@@ -77,12 +79,14 @@ export function useConversations() {
             throw new Error('Invalid backup data format');
           }
 
-          const validatedBackup = parsed.map((conv: any) => ({
-            ...conv,
-            createdAt: new Date(conv.createdAt),
-            id: conv.id || Date.now().toString(),
-            messages: Array.isArray(conv.messages) ? conv.messages : []
-          }));
+          const validatedBackup = parsed
+            .map((conv: any) => ({
+              ...conv,
+              createdAt: new Date(conv.createdAt),
+              id: conv.id || Date.now().toString(),
+              messages: Array.isArray(conv.messages) ? conv.messages : []
+            }))
+            .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); // Sort by creation time
 
           setConversations(validatedBackup);
           setError('Recovered from backup. Some recent changes might be missing.');
