@@ -20,7 +20,9 @@ import {
   CheckCircle2,
   ArrowUpRight,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Moon,
+  Sun
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import TypewriterComponent from 'typewriter-effect'
@@ -165,6 +167,12 @@ export default function BusinessAdvisor() {
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [newMessageId, setNewMessageId] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('darkMode') === 'true'
+    }
+    return false
+  })
 
   const {
     conversations,
@@ -318,57 +326,60 @@ export default function BusinessAdvisor() {
 
   // Optimize conversation rendering with useMemo
   const renderedConversations = useMemo(() => 
-    conversations.map((conv) => (
-      <motion.div
-        key={conv.id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className={`rounded-lg border border-purple-100 bg-white/90 p-6 shadow-sm transition-all hover:shadow-md ${
-          activeConversation === conv.id ? 'ring-2 ring-purple-400' : ''
-        }`}
-        onClick={() => setActiveConversation(conv.id)}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            {getCategoryIcon(conv.category)}
-            <span className="text-sm font-light text-purple-800">{getCategoryLabel(conv.category)}</span>
+    conversations
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()) // Sort by creation time
+      .map((conv) => (
+        <motion.div
+          key={conv.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className={`rounded-lg border border-purple-100 dark:border-purple-800 bg-white/90 dark:bg-gray-900/90 p-6 shadow-sm transition-all hover:shadow-md ${
+            activeConversation === conv.id ? 'ring-2 ring-purple-400' : ''
+          }`}
+          onClick={() => setActiveConversation(conv.id)}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              {getCategoryIcon(conv.category)}
+              <span className="text-sm font-light text-purple-800">{getCategoryLabel(conv.category)}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${getSentimentColor(conv.sentiment)}`}>
+                {getSentimentIcon(conv.sentiment)}
+                <span>{getSentimentLabel(conv.sentiment)}</span>
+              </span>
+              {conv.messages.length > 2 && (
+                <div className="flex items-center text-xs text-indigo-600">
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  {Math.floor(conv.messages.length / 2)} revelations
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${getSentimentColor(conv.sentiment)}`}>
-              {getSentimentIcon(conv.sentiment)}
-              <span>{getSentimentLabel(conv.sentiment)}</span>
-            </span>
-            {conv.messages.length > 2 && (
-              <div className="flex items-center text-xs text-indigo-600">
-                <MessageSquare className="h-3 w-3 mr-1" />
-                {Math.floor(conv.messages.length / 2)} revelations
-              </div>
-            )}
+
+          <div className="space-y-4">
+            {conv.messages
+              .map((msg, idx) => {
+                const messageId = `${conv.id}-${idx}`;
+                return (
+                  <AnimatedMessage 
+                    key={messageId} 
+                    message={msg} 
+                    role={msg.role}
+                    isNewMessage={messageId === newMessageId}
+                  />
+                );
+              })}
           </div>
-        </div>
 
-        <div className="space-y-4">
-          {conv.messages.map((msg, idx) => {
-            const messageId = `${conv.id}-${idx}`;
-            return (
-              <AnimatedMessage 
-                key={messageId} 
-                message={msg} 
-                role={msg.role}
-                isNewMessage={messageId === newMessageId}
-              />
-            );
-          })}
-        </div>
-
-        <div className="mt-4 text-xs text-purple-600 italic">
-          Journey began: {new Date(conv.createdAt).toLocaleString()}
-        </div>
-      </motion.div>
-    )), [conversations, activeConversation, newMessageId]);
+          <div className="mt-4 text-xs text-purple-600 dark:text-purple-400 italic">
+            Journey began: {new Date(conv.createdAt).toLocaleString()}
+          </div>
+        </motion.div>
+      )), [conversations, activeConversation, newMessageId]);
 
   // Update handleSubmit to append new conversations at the end
   const handleSubmit = async (e: React.FormEvent) => {
@@ -423,7 +434,7 @@ export default function BusinessAdvisor() {
           messages: newMessages,
           createdAt: new Date()
         };
-        setConversations(prev => [...prev, newPrompt]);
+        setConversations(prev => [...prev, newPrompt].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()));
         setActiveConversation(newId);
         setNewMessageId(`${newId}-1`);
       }
@@ -459,16 +470,27 @@ export default function BusinessAdvisor() {
     }
   }, [isProcessing])
 
+  // Add dark mode effect
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('darkMode', 'true')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('darkMode', 'false')
+    }
+  }, [isDarkMode])
+
   return (
-    <div className="container mx-auto max-w-4xl p-4 bg-gradient-to-b from-white to-purple-50">
+    <div className="container mx-auto max-w-4xl p-4 bg-gradient-to-b from-white to-purple-50 dark:from-gray-900 dark:to-purple-900/50">
       <div className="mb-8 relative">
         {/* Main Header */}
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h1 className="text-3xl font-light text-foreground bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+            <h1 className="text-3xl font-light text-foreground bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">
               Soul-Guided Business Journey
             </h1>
-            <p className="text-sm text-muted-foreground mt-2 italic">
+            <p className="text-sm text-muted-foreground mt-2 italic dark:text-gray-400">
               Aligning your business with universal wisdom
             </p>
           </div>
@@ -488,9 +510,27 @@ export default function BusinessAdvisor() {
         <div 
           className={`fixed right-0 top-0 h-full w-64 transition-transform duration-500 ease-in-out transform 
             ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'} 
-            bg-white/95 backdrop-blur-md border-l border-purple-100 shadow-lg z-40 p-6`}
+            bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-l border-purple-100 dark:border-purple-800 shadow-lg z-40 p-6`}
         >
           <div className="flex flex-col gap-4 mt-16">
+            <Button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              variant="soft"
+              className="w-full justify-start bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
+            >
+              {isDarkMode ? (
+                <>
+                  <Sun className="mr-2 h-4 w-4" />
+                  Light Mode
+                </>
+              ) : (
+                <>
+                  <Moon className="mr-2 h-4 w-4" />
+                  Dark Mode
+                </>
+              )}
+            </Button>
+            <div className="h-px bg-purple-100 dark:bg-purple-800 my-2" />
             <Button 
               onClick={resetAll}
               variant="soft"
@@ -545,7 +585,7 @@ export default function BusinessAdvisor() {
         )}
 
         {/* Journey Indicators */}
-        <div className="flex justify-between items-center mt-6 bg-white/60 p-3 rounded-lg backdrop-blur-sm">
+        <div className="flex justify-between items-center mt-6 bg-white/60 dark:bg-gray-800/60 p-3 rounded-lg backdrop-blur-sm">
           <div className="flex gap-6">
             <div className="flex items-center gap-2">
               <Heart className="h-4 w-4 text-purple-500" />
@@ -569,13 +609,13 @@ export default function BusinessAdvisor() {
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-md">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
       <ScrollArea 
-        className="h-[calc(100vh-400px)] rounded-lg border border-purple-100 bg-white/80 backdrop-blur-sm p-4 mb-6"
+        className="h-[calc(100vh-400px)] rounded-lg border border-purple-100 dark:border-purple-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 mb-6"
         ref={scrollAreaRef}
       >
         <AnimatePresence mode="popLayout">
@@ -603,7 +643,7 @@ export default function BusinessAdvisor() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sticky bottom-0 bg-white/80 backdrop-blur-md pt-4 border-t border-purple-100"
+        className="sticky bottom-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md pt-4 border-t border-purple-100 dark:border-purple-800"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <TextField.Root>

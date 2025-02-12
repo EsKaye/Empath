@@ -34,13 +34,13 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
 
   const renderContent = useCallback(() => {
     if (error) {
-      return <p className="text-red-600 text-sm">{error}</p>;
+      return <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>;
     }
 
     return displayContent.split('\n\n').map((paragraph, i) => (
       <span key={i} className="block mb-4 last:mb-0">
         {paragraph.startsWith('•') ? (
-          <span className="block pl-4 -indent-4 text-indigo-700">{paragraph}</span>
+          <span className="block pl-4 -indent-4 text-indigo-700 dark:text-indigo-300">{paragraph}</span>
         ) : (
           paragraph
         )}
@@ -55,8 +55,8 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
       transition={{ duration: 0.3 }}
       className={`p-4 rounded-lg ${
         role === 'user' 
-          ? 'bg-purple-50 ml-auto max-w-[80%] border border-purple-100' 
-          : 'bg-indigo-50 mr-auto max-w-[80%] border border-indigo-100'
+          ? 'bg-purple-50 dark:bg-purple-900/50 ml-auto max-w-[80%] border border-purple-100 dark:border-purple-800' 
+          : 'bg-indigo-50 dark:bg-indigo-900/50 mr-auto max-w-[80%] border border-indigo-100 dark:border-indigo-800'
       }`}
     >
       {role === 'assistant' ? (
