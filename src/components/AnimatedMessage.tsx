@@ -40,9 +40,9 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
     return displayContent.split('\n\n').map((paragraph, i) => (
       <span key={i} className="block mb-4 last:mb-0">
         {paragraph.startsWith('•') ? (
-          <span className="block pl-4 -indent-4 text-gray-800 dark:text-gray-100">{paragraph}</span>
+          <span className="block pl-4 -indent-4 text-gray-800 dark:text-white">{paragraph}</span>
         ) : (
-          <span className="text-gray-800 dark:text-gray-100">{paragraph}</span>
+          <span className="text-gray-800 dark:text-white">{paragraph}</span>
         )}
       </span>
     ));
@@ -55,12 +55,12 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
       transition={{ duration: 0.3 }}
       className={`p-4 rounded-lg ${
         role === 'user' 
-          ? 'bg-purple-50 dark:bg-purple-900/30 ml-auto max-w-[80%] border border-purple-100 dark:border-purple-800' 
-          : 'bg-indigo-50 dark:bg-indigo-900/30 mr-auto max-w-[80%] border border-indigo-100 dark:border-indigo-800'
+          ? 'bg-purple-50 dark:bg-purple-800 ml-auto max-w-[80%] border border-purple-100 dark:border-purple-700' 
+          : 'bg-indigo-50 dark:bg-indigo-800 mr-auto max-w-[80%] border border-indigo-100 dark:border-indigo-700'
       }`}
     >
       {role === 'assistant' ? (
-        <div className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-100">
+        <div className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-white">
           {isTyping ? (
             <TypewriterComponent
               onInit={(typewriter) => {
@@ -79,7 +79,7 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
               }}
               options={{
                 cursor: '|',
-                wrapperClassName: "text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-100"
+                wrapperClassName: "text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-white"
               }}
             />
           ) : (
@@ -89,7 +89,7 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
           )}
         </div>
       ) : (
-        <p className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-100">
+        <p className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-white">
           {message.content}
         </p>
       )}
