@@ -101,6 +101,68 @@ const AnimatedMessage = ({ message, role, isNewMessage }: { message: Message; ro
   );
 };
 
+// Helper functions
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'purpose': return <Heart className="h-4 w-4 text-purple-500" />
+    case 'alignment': return <Target className="h-4 w-4 text-indigo-500" />
+    case 'service': return <MessageSquare className="h-4 w-4 text-blue-500" />
+    case 'abundance': return <DollarSign className="h-4 w-4 text-green-500" />
+    case 'wisdom': return <Lightbulb className="h-4 w-4 text-amber-500" />
+    case 'community': return <MessageSquare className="h-4 w-4 text-pink-500" />
+    case 'innovation': return <Target className="h-4 w-4 text-cyan-500" />
+    case 'mastery': return <CheckCircle2 className="h-4 w-4 text-violet-500" />
+    default: return <MessageSquare className="h-4 w-4 text-purple-500" />
+  }
+}
+
+const getCategoryLabel = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'purpose': return 'Soul Purpose'
+    case 'alignment': return 'Energy Alignment'
+    case 'service': return 'Divine Service'
+    case 'abundance': return 'Sacred Abundance'
+    case 'wisdom': return 'Inner Wisdom'
+    case 'community': return 'Soul Tribe'
+    case 'innovation': return 'Creative Flow'
+    case 'mastery': return 'Spiritual Mastery'
+    default: return 'Sacred Journey'
+  }
+}
+
+const getSentimentIcon = (sentiment: string) => {
+  switch (sentiment) {
+    case 'ALIGNED': return <Heart className="h-4 w-4 text-purple-500" />
+    case 'ALIGNED_TRANSFORMING': return <Target className="h-4 w-4 text-indigo-500" />
+    case 'SEEKING': return <Lightbulb className="h-4 w-4 text-amber-500" />
+    case 'SEEKING_TRANSFORMING': return <ArrowUpRight className="h-4 w-4 text-blue-500" />
+    case 'TRANSFORMING': return <CheckCircle2 className="h-4 w-4 text-green-500" />
+    default: return <MessageSquare className="h-4 w-4 text-purple-500" />
+  }
+}
+
+const getSentimentLabel = (sentiment: string) => {
+  switch (sentiment) {
+    case 'ALIGNED': return 'Soul Aligned'
+    case 'ALIGNED_TRANSFORMING': return 'Divine Flow'
+    case 'SEEKING': return 'Seeking Clarity'
+    case 'SEEKING_TRANSFORMING': return 'Sacred Shift'
+    case 'TRANSFORMING': return 'Transforming'
+    default: return 'Journey Begins'
+  }
+}
+
+const getSentimentColor = (sentiment: string) => {
+  switch (sentiment) {
+    case 'ALIGNED': return 'bg-purple-50 text-purple-700'
+    case 'ALIGNED_TRANSFORMING': return 'bg-indigo-50 text-indigo-700'
+    case 'SEEKING': return 'bg-amber-50 text-amber-700'
+    case 'SEEKING_TRANSFORMING': return 'bg-blue-50 text-blue-700'
+    case 'TRANSFORMING': return 'bg-green-50 text-green-700'
+    default: return 'bg-purple-50 text-purple-700'
+  }
+}
+
 export default function BusinessAdvisor() {
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -385,67 +447,6 @@ export default function BusinessAdvisor() {
   const startNewConversation = () => {
     setActiveConversation(null)
     setInput('')
-  }
-
-  const getCategoryIcon = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'purpose': return <Heart className="h-4 w-4 text-purple-500" />
-      case 'alignment': return <Target className="h-4 w-4 text-indigo-500" />
-      case 'service': return <MessageSquare className="h-4 w-4 text-blue-500" />
-      case 'abundance': return <DollarSign className="h-4 w-4 text-green-500" />
-      case 'wisdom': return <Lightbulb className="h-4 w-4 text-amber-500" />
-      case 'community': return <MessageSquare className="h-4 w-4 text-pink-500" />
-      case 'innovation': return <Target className="h-4 w-4 text-cyan-500" />
-      case 'mastery': return <CheckCircle2 className="h-4 w-4 text-violet-500" />
-      default: return <MessageSquare className="h-4 w-4 text-purple-500" />
-    }
-  }
-
-  const getCategoryLabel = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'purpose': return 'Soul Purpose'
-      case 'alignment': return 'Energy Alignment'
-      case 'service': return 'Divine Service'
-      case 'abundance': return 'Sacred Abundance'
-      case 'wisdom': return 'Inner Wisdom'
-      case 'community': return 'Soul Tribe'
-      case 'innovation': return 'Creative Flow'
-      case 'mastery': return 'Spiritual Mastery'
-      default: return 'Sacred Journey'
-    }
-  }
-
-  const getSentimentIcon = (sentiment: string) => {
-    switch (sentiment) {
-      case 'ALIGNED': return <Heart className="h-4 w-4 text-purple-500" />
-      case 'ALIGNED_TRANSFORMING': return <Target className="h-4 w-4 text-indigo-500" />
-      case 'SEEKING': return <Lightbulb className="h-4 w-4 text-amber-500" />
-      case 'SEEKING_TRANSFORMING': return <ArrowUpRight className="h-4 w-4 text-blue-500" />
-      case 'TRANSFORMING': return <CheckCircle2 className="h-4 w-4 text-green-500" />
-      default: return <MessageSquare className="h-4 w-4 text-purple-500" />
-    }
-  }
-
-  const getSentimentLabel = (sentiment: string) => {
-    switch (sentiment) {
-      case 'ALIGNED': return 'Soul Aligned'
-      case 'ALIGNED_TRANSFORMING': return 'Divine Flow'
-      case 'SEEKING': return 'Seeking Clarity'
-      case 'SEEKING_TRANSFORMING': return 'Sacred Shift'
-      case 'TRANSFORMING': return 'Transforming'
-      default: return 'Journey Begins'
-    }
-  }
-
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case 'ALIGNED': return 'bg-purple-50 text-purple-700'
-      case 'ALIGNED_TRANSFORMING': return 'bg-indigo-50 text-indigo-700'
-      case 'SEEKING': return 'bg-amber-50 text-amber-700'
-      case 'SEEKING_TRANSFORMING': return 'bg-blue-50 text-blue-700'
-      case 'TRANSFORMING': return 'bg-green-50 text-green-700'
-      default: return 'bg-purple-50 text-purple-700'
-    }
   }
 
   const resetAll = () => {
