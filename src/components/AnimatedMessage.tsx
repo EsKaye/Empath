@@ -40,7 +40,7 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
     return displayContent.split('\n\n').map((paragraph, i) => (
       <span key={i} className="block mb-4 last:mb-0">
         {paragraph.startsWith('•') ? (
-          <span className="block pl-4 -indent-4 text-indigo-700 dark:text-indigo-300">{paragraph}</span>
+          <span className="block pl-4 -indent-4 text-gray-800 dark:text-gray-100">{paragraph}</span>
         ) : (
           <span className="text-gray-800 dark:text-gray-100">{paragraph}</span>
         )}
@@ -55,12 +55,12 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
       transition={{ duration: 0.3 }}
       className={`p-4 rounded-lg ${
         role === 'user' 
-          ? 'bg-purple-50 dark:bg-purple-900/30 ml-auto max-w-[80%] border border-purple-100 dark:border-purple-800 text-gray-800 dark:text-gray-100' 
-          : 'bg-indigo-50 dark:bg-indigo-900/30 mr-auto max-w-[80%] border border-indigo-100 dark:border-indigo-800 text-gray-800 dark:text-gray-100'
+          ? 'bg-purple-50 dark:bg-purple-900/30 ml-auto max-w-[80%] border border-purple-100 dark:border-purple-800' 
+          : 'bg-indigo-50 dark:bg-indigo-900/30 mr-auto max-w-[80%] border border-indigo-100 dark:border-indigo-800'
       }`}
     >
       {role === 'assistant' ? (
-        <div className="text-sm whitespace-pre-wrap leading-relaxed">
+        <div className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-100">
           {isTyping ? (
             <TypewriterComponent
               onInit={(typewriter) => {
@@ -89,7 +89,7 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
           )}
         </div>
       ) : (
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">
+        <p className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-100">
           {message.content}
         </p>
       )}
