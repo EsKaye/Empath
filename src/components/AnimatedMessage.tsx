@@ -42,7 +42,7 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
         {paragraph.startsWith('•') ? (
           <span className="block pl-4 -indent-4 text-indigo-700 dark:text-indigo-300">{paragraph}</span>
         ) : (
-          paragraph
+          <span className="text-gray-800 dark:text-gray-100">{paragraph}</span>
         )}
       </span>
     ));
@@ -55,8 +55,8 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
       transition={{ duration: 0.3 }}
       className={`p-4 rounded-lg ${
         role === 'user' 
-          ? 'bg-purple-50 dark:bg-purple-900/50 ml-auto max-w-[80%] border border-purple-100 dark:border-purple-800' 
-          : 'bg-indigo-50 dark:bg-indigo-900/50 mr-auto max-w-[80%] border border-indigo-100 dark:border-indigo-800'
+          ? 'bg-purple-50 dark:bg-purple-900/30 ml-auto max-w-[80%] border border-purple-100 dark:border-purple-800 text-gray-800 dark:text-gray-100' 
+          : 'bg-indigo-50 dark:bg-indigo-900/30 mr-auto max-w-[80%] border border-indigo-100 dark:border-indigo-800 text-gray-800 dark:text-gray-100'
       }`}
     >
       {role === 'assistant' ? (
@@ -79,7 +79,7 @@ export function AnimatedMessage({ message, role, isNewMessage = false }: Animate
               }}
               options={{
                 cursor: '|',
-                wrapperClassName: "text-sm whitespace-pre-wrap leading-relaxed"
+                wrapperClassName: "text-sm whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-100"
               }}
             />
           ) : (
