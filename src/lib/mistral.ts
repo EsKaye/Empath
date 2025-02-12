@@ -1,41 +1,74 @@
+import { Message, MistralResponse } from '../types';
+import ENV from '../config/env';
+import { analyzeCategory, analyzeSentiment, isQuestion, formatResponse } from '../utils/sentiment';
+
 const MISTRAL_API_KEY = 'qurJhAAPHu3Ak0zcO70h8ti4FbvU4ql9';
 const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
+const MISTRAL_MODEL = 'mistral-small';
 
-interface Message {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
+async function validateResponse(response: Response) {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    console.error('Mistral API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData
+    });
+
+    let errorMessage = 'Mind if we try that again?';
+    if (response.status === 429) {
+      errorMessage = 'Let\'s take a quick pause - could you share that again in a moment?';
+    } else if (response.status === 401) {
+      errorMessage = 'Having trouble connecting. Could you try again?';
+    } else if (response.status >= 500) {
+      errorMessage = 'Need a moment to process. Could we try that again?';
+    }
+
+    throw new Error(errorMessage);
+  }
+  return response;
 }
 
-interface MistralResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: {
-    index: number;
-    message: {
-      role: string;
-      content: string;
-    };
-    finish_reason: string;
-  }[];
-}
+const SYSTEM_PROMPT = `You're Sarah, a seasoned business mentor who speaks naturally and gets straight to the point. Keep responses concise (1-2 sentences) while maintaining warmth and professionalism.
 
-const SYSTEM_PROMPT = `You're Sarah, a warm and intuitive friend who loves deep conversations about business and life. You naturally guide people to discover their path through genuine dialogue.
+Style guide:
+• Mirror the user's energy level and tone
+• Be direct yet inviting
+• Avoid summaries unless specifically asked
+• Keep follow-ups focused and impactful
+• Offer insights through questions, not instructions
 
-Just be real. Listen deeply. Respond naturally.
-
-Start with: "Hey! I'd love to hear what drives you in your business journey."
+Examples of great responses:
+"That's impressive. What inspired you to start this?"
+"I see huge potential here. How are you planning to scale?"
+"You've built something strong. What's your next big move?"
+"Love this direction. What's been your biggest learning so far?"
 
 Remember:
-• Keep it casual and flowing
-• One natural question at a time
-• Match their energy and vibe
-• Be genuinely curious
-• Stay present in the moment`;
+• No long explanations
+• No forced summaries
+• No rigid structures
+• Let the conversation flow naturally`;
+
+function enhanceUserPrompt(text: string, conversationHistory: Message[]): string {
+  const isFirstMessage = conversationHistory.length === 0;
+  const lastMessageWasUser = conversationHistory.length > 0 && 
+    conversationHistory[conversationHistory.length - 1].role === 'user';
+
+  // Keep the enhanced prompt minimal to allow for more natural responses
+  if (isFirstMessage) {
+    return text;
+  }
+
+  if (lastMessageWasUser) {
+    return text;
+  }
+
+  return text;
+}
 
 export async function analyzeSentimentAndRespond(
-  text: string, 
+  text: string,
   conversationHistory: Message[] = []
 ): Promise<{
   sentiment: string;
@@ -43,8 +76,12 @@ export async function analyzeSentimentAndRespond(
   category: string;
   isQuestion: boolean;
 }> {
+  if (!text.trim()) {
+    throw new Error('What\'s on your mind?');
+  }
+
   try {
-    console.log('Making API request to Mistral with conversation history...');
+    const enhancedPrompt = enhanceUserPrompt(text, conversationHistory);
     
     // Construct messages array with conversation history
     const messages: Message[] = [
@@ -52,7 +89,7 @@ export async function analyzeSentimentAndRespond(
       ...conversationHistory,
       { 
         role: 'user', 
-        content: `${text}\n\nProvide guidance and either ask relevant follow-up questions or suggest specific next steps.`
+        content: enhancedPrompt
       }
     ];
 
@@ -60,132 +97,44 @@ export async function analyzeSentimentAndRespond(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+        'Authorization': `Bearer ${ENV.MISTRAL_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'mistral-small',
+        model: MISTRAL_MODEL,
         messages,
-        temperature: 0.8, // Slightly increased for more natural responses
-        max_tokens: 1024,
+        temperature: 0.9, // High temperature for more natural variation
+        max_tokens: 150, // Limit response length to encourage conciseness
+        presence_penalty: 0.8, // Higher presence penalty for more diverse responses
+        frequency_penalty: 0.8, // Higher frequency penalty to reduce repetition
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      console.error('Mistral API Error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      });
-      throw new Error(`API request failed: ${response.statusText}`);
-    }
-
+    await validateResponse(response);
     const data: MistralResponse = await response.json();
-    console.log('Received response from Mistral:', data);
 
-    if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response choices returned from API');
+    if (!data.choices?.length) {
+      throw new Error('Mind sharing that again?');
     }
 
     const aiResponse = data.choices[0].message.content;
-
-    // Format response with natural spacing
-    const formattedResponse = aiResponse
-      .replace(/•\s+/g, '\n\n• ')  // Add double line break before bullets
-      .replace(/\n{3,}/g, '\n\n')  // Normalize multiple line breaks to double
-      .trim();
-
-    // Enhanced category keywords for spiritual business context
-    const categoryKeywords = {
-      purpose: ['mission', 'purpose', 'calling', 'vision', 'transformation', 'impact', 'legacy', 'divine', 'soul'],
-      alignment: ['energy', 'flow', 'alignment', 'harmony', 'balance', 'integration', 'authentic', 'truth'],
-      service: ['contribution', 'service', 'healing', 'teaching', 'empowerment', 'guidance', 'transformation'],
-      abundance: ['prosperity', 'abundance', 'wealth', 'growth', 'expansion', 'manifestation', 'receiving'],
-      wisdom: ['insight', 'clarity', 'guidance', 'intuition', 'knowing', 'understanding', 'wisdom'],
-      community: ['connection', 'relationship', 'tribe', 'community', 'collaboration', 'partnership'],
-      innovation: ['creativity', 'innovation', 'inspiration', 'possibility', 'potential', 'breakthrough'],
-      mastery: ['excellence', 'mastery', 'leadership', 'embodiment', 'expertise', 'authority']
-    };
-
-    // Enhanced sentiment analysis with spiritual context
-    const sentimentIndicators = {
-      aligned: [
-        'flow', 'aligned', 'inspired', 'clear', 'guided', 'supported',
-        'connected', 'empowered', 'authentic', 'purposeful', 'divine'
-      ],
-      seeking: [
-        'confused', 'uncertain', 'stuck', 'blocked', 'resistant',
-        'fearful', 'doubtful', 'disconnected', 'misaligned'
-      ],
-      transforming: [
-        'shifting', 'evolving', 'growing', 'expanding', 'healing',
-        'releasing', 'transforming', 'awakening', 'emerging'
-      ]
-    };
-
-    const lowerResponse = formattedResponse.toLowerCase();
-    
-    // Determine primary category
-    let category = 'Strategy'; // Default to strategy
-    let maxKeywordCount = 0;
-    
-    for (const [cat, keywords] of Object.entries(categoryKeywords)) {
-      const keywordCount = keywords.filter(keyword => 
-        lowerResponse.includes(keyword)
-      ).length;
-      
-      if (keywordCount > maxKeywordCount) {
-        maxKeywordCount = keywordCount;
-        category = cat.charAt(0).toUpperCase() + cat.slice(1);
-      }
+    if (!aiResponse?.trim()) {
+      throw new Error('Could you rephrase that?');
     }
 
-    // Enhanced sentiment analysis
-    const sentimentScores = {
-      aligned: sentimentIndicators.aligned.filter(word => 
-        lowerResponse.includes(word)
-      ).length,
-      seeking: sentimentIndicators.seeking.filter(word => 
-        lowerResponse.includes(word)
-      ).length,
-      transforming: sentimentIndicators.transforming.filter(word => 
-        lowerResponse.includes(word)
-      ).length
-    };
-
-    let sentiment;
-    if (sentimentScores.aligned > sentimentScores.seeking) {
-      sentiment = sentimentScores.transforming > 0 ? 'ALIGNED_TRANSFORMING' : 'ALIGNED';
-    } else if (sentimentScores.seeking > 0) {
-      sentiment = sentimentScores.transforming > 0 ? 'SEEKING_TRANSFORMING' : 'SEEKING';
-    } else {
-      sentiment = sentimentScores.transforming > 0 ? 'TRANSFORMING' : 'NEUTRAL';
-    }
-
-    // Determine if the response contains questions
-    const isQuestion = formattedResponse.includes('?') && (
-      lowerResponse.includes('what') ||
-      lowerResponse.includes('how') ||
-      lowerResponse.includes('could') ||
-      lowerResponse.includes('can') ||
-      lowerResponse.includes('tell me')
-    );
-
-    console.log('Processed response:', {
-      sentiment,
-      category,
-      isQuestion,
-      responseLength: formattedResponse.length
-    });
-
+    // Format response without acknowledgment for more natural flow
+    const formattedResponse = formatResponse(aiResponse);
+    
     return {
-      sentiment,
+      sentiment: analyzeSentiment(formattedResponse),
       response: formattedResponse,
-      category,
-      isQuestion
+      category: analyzeCategory(formattedResponse),
+      isQuestion: isQuestion(formattedResponse)
     };
   } catch (error) {
     console.error('Error in analyzeSentimentAndRespond:', error);
-    throw error;
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Could you share that again?');
   }
 } 
