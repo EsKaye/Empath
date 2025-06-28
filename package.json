@@ -1,13 +1,45 @@
 {
-  "name": "business-advisor-ai",
+  "name": "empath",
+  "version": "1.0.0",
+  "description": "AI-Powered Empathy Companion - A modern React application for intelligent conversations and sentiment analysis",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "keywords": [
+    "react",
+    "typescript",
+    "ai",
+    "empathy",
+    "sentiment-analysis",
+    "mistral-ai",
+    "radix-ui",
+    "tailwindcss",
+    "vite"
+  ],
+  "author": {
+    "name": "EmPath Team",
+    "email": "support@empath.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/empath.git"
+  },
+  "homepage": "https://github.com/yourusername/empath#readme",
+  "bugs": {
+    "url": "https://github.com/yourusername/empath/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.0",
@@ -30,9 +62,28 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "postcss": "^8.4.35",
+    "prettier": "^3.2.5",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.2.2",
-    "vite": "^5.1.0"
+    "vite": "^5.1.0",
+    "vitest": "^1.2.2",
+    "@vitest/ui": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
