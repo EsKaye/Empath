@@ -1,8 +1,17 @@
 # Engineering Standards
 
-- Node 20 for JS/TS; Python 3.11 for Python
-- Prefer pnpm when a pnpm lockfile exists; otherwise keep repo PM
-- CI: lint → test → build; jobs are conditional and non-blocking initially
-- No direct pushes to `main`; use branches + PRs
-- Never commit secrets; use GitHub Secrets
-- Add README badges for CI and Release
+## Code Style
+- Follow ESLint and Prettier configurations.
+- Use TypeScript for type safety.
+
+## CI/CD
+- Use GitHub Actions for CI.
+- Node.js projects should target Node.js 20.
+
+## Security
+- Secrets must be stored in GitHub Secrets.
+- No sensitive data in code.
+
+## Documentation
+- Add `/docs/runbook.md` for local development.
+- Add `/docs/engineering/standards.md` for guidelines.
